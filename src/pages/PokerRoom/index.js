@@ -1,9 +1,12 @@
 import React from 'react';
+import CardsList from "../../components/CardsList"
 
 function PokerRoom() {
 
   return (
-    <h1>Poker Room</h1>
+    <>
+      <CardsList />
+    </>
   )
 }
 
