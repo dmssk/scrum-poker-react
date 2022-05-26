@@ -34,7 +34,9 @@ function CardItem(props) {
 
 const areEqual = (prevProps, nextProps) => {
   return prevProps.selected === nextProps.selected
-    && prevProps.title === nextProps.title;
+    && prevProps.title === nextProps.title
+    && prevProps.userName === nextProps.userName
+    && prevProps.socket === nextProps.socket;
 }
 
 export default React.memo(CardItem, areEqual);

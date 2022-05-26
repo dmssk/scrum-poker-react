@@ -1,12 +1,47 @@
-import React, {useState} from 'react';
-import {Box, Button, ButtonGroup, Divider, Grid, Typography} from "@mui/material"
+import React, {useEffect, useState} from 'react';
+import {Box, Button, ButtonGroup, Divider, Grid, TextField, Typography} from "@mui/material"
 import styles from './CardsList.module.scss'
 import cards from './constants'
 import CardItem from "../CardItem"
 
+import socketClient from "socket.io-client";
+const SERVER = "http://127.0.0.1:8080";
+
 function CardsList() {
   const [selectedCard, setSelectedCard] = useState(null);
-  const [test] = useState([1,2,3,4,5,6,7,8,9,10,11])
+  const [name, setName] = useState('');
+  const [socket, setSocket] = useState(null);
+  const [userId] = useState(Math.random() * 100);
+  const [othersData, setOthersData] = useState(null);
+
+  async function getData() {
+    try {
+      const response = await fetch('http://localhost:8080/getData');
+      return await response.json();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  useEffect(() => {
+    getData().then(({data}) => {
+      setOthersData(data);
+    });
+    const sockedEntity = socketClient(SERVER);
+    setSocket(sockedEntity);
+
+    sockedEntity.on('card-selected', data => {
+      setOthersData(data);
+    })
+
+    return () => {
+      console.log('userId', userId);
+      sockedEntity.emit('clear-data', {
+        userId
+      })
+      sockedEntity.disconnect();
+    };
+  }, []);
 
   const checkIsCardSelected = (card) => {
     if (selectedCard && card) {
@@ -15,13 +50,38 @@ function CardsList() {
     return false;
   };
 
+  const handleNameChange = ({target}) => {
+    setName(target.value);
+    if (selectedCard) {
+      socket.emit('card-select', {
+        value: selectedCard.value,
+        userId,
+        userName: target.value,
+      })
+    }
+  }
+
+  const handleSelectCard = (card) => {
+    setSelectedCard(card);
+    socket.emit('card-select', {
+      value: card.value,
+      userId,
+      userName: name,
+    })
+  }
+
   return (
     <Box className={styles.allCardsBox}>
       <Grid container>
         <Grid item xs={12}>
-          <Typography variant="h6" className={styles.title}>
-            Select your estimate:
-          </Typography>
+          <Box mb={3}>
+            <TextField
+              label="Your name"
+              variant="outlined"
+              value={name}
+              onChange={handleNameChange}
+            />
+          </Box>
         </Grid>
       </Grid>
       <Grid container>
@@ -32,7 +92,9 @@ function CardsList() {
                 <CardItem
                   title={card.value}
                   selected={checkIsCardSelected(card)}
-                  onSelect={() => setSelectedCard(card)}
+                  socket={socket}
+                  userName={name}
+                  onSelect={() => handleSelectCard(card)}
                 />
               </Grid>
             ))}
@@ -52,17 +114,21 @@ function CardsList() {
         <Grid item xs={12} className={styles.actionButtons}>
           <ButtonGroup variant="contained">
             <Button onClick={() => setSelectedCard(null)}>Reset Card</Button>
-            <Button>Reveal Cards</Button>
+            <Button disabled={!selectedCard || !name}>Reveal Cards</Button>
           </ButtonGroup>
-          <Box ml={3}><Typography>Other users selected _num_ card(s)</Typography></Box>
+          <Box ml={3}>
+            <Typography>
+              Users selected {othersData ? othersData.selectedCards.length : '0'} of {othersData ? othersData.usersCount : '0'} card(s)
+            </Typography>
+          </Box>
         </Grid>
       </Grid>
       <Grid container spacing={8}>
-        {test.map(item => (
-        <Grid item xs={2} key={`${item}_id`}>
+        {othersData && othersData.selectedCards.map(item => (
+        <Grid item xs={2} key={item.userId}>
+            <Typography>{item.userName || item.userId}</Typography>
             <CardItem
-              title={'Select a card'}
-              hiddenValue
+              title={item.value}
               onSelect={() => false}
             />
         </Grid>
@@ -71,4 +137,5 @@ function CardsList() {
     </Box>
   )
 }
+
 export default CardsList;
