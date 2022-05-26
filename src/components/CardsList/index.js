@@ -13,6 +13,7 @@ function CardsList() {
   const [socket, setSocket] = useState(null);
   const [userId] = useState(Math.random() * 100);
   const [othersData, setOthersData] = useState(null);
+  const [revealed, setRevealed] = useState(false);
 
   async function getData() {
     try {
@@ -33,14 +34,16 @@ function CardsList() {
     sockedEntity.on('card-selected', data => {
       setOthersData(data);
     })
-
-    return () => {
-      console.log('userId', userId);
-      sockedEntity.emit('clear-data', {
-        userId
+    sockedEntity.on('on-reveal-card', () => {
+      setRevealed(true);
+    })
+    sockedEntity.on('disconnecting', () => {
+      sockedEntity.emit('delete-card', {
+        userId,
       })
-      sockedEntity.disconnect();
-    };
+    })
+
+    return () => sockedEntity.disconnect();
   }, []);
 
   const checkIsCardSelected = (card) => {
@@ -68,6 +71,16 @@ function CardsList() {
       userId,
       userName: name,
     })
+  }
+
+  const handleRemoveCard = () => {
+    setSelectedCard(null)
+    socket.emit('delete-card', userId)
+  }
+
+  const handleReveal = () => {
+    setRevealed(true);
+    socket.emit('card-reveal', 'test');
   }
 
   return (
@@ -113,8 +126,8 @@ function CardsList() {
       <Grid container spacing={8}>
         <Grid item xs={12} className={styles.actionButtons}>
           <ButtonGroup variant="contained">
-            <Button onClick={() => setSelectedCard(null)}>Reset Card</Button>
-            <Button disabled={!selectedCard || !name}>Reveal Cards</Button>
+            <Button onClick={handleRemoveCard}>Reset Card</Button>
+            <Button disabled={!selectedCard || !name} onClick={handleReveal}>Reveal Cards</Button>
           </ButtonGroup>
           <Box ml={3}>
             <Typography>
@@ -129,6 +142,7 @@ function CardsList() {
             <Typography>{item.userName || item.userId}</Typography>
             <CardItem
               title={item.value}
+              hiddenValue={!revealed}
               onSelect={() => false}
             />
         </Grid>
