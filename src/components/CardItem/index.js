@@ -1,12 +1,22 @@
 import React from 'react';
 import {Card, CardActionArea, CardContent, Typography} from "@mui/material"
 import styles from "./CardItem.module.scss"
+import classNames from "classnames"
 
 function CardItem(props) {
-  const { title, big, selected, onSelect } = props;
+  const { title, big, selected, hiddenValue, onSelect } = props;
+  const getRandomCardStyle = () => {
+    return `hiddenCard${Math.floor(Math.random() * 3) + 1}`
+  };
 
   return (
-    <Card raised={selected}>
+    <Card
+      raised={selected}
+      className={classNames(
+        hiddenValue && styles[getRandomCardStyle()],
+        styles.cardWrapped,
+      )}
+    >
       <CardActionArea
         className={big ? styles.cardBig : styles.card}
         onClick={onSelect}
@@ -21,4 +31,10 @@ function CardItem(props) {
   )
 }
 
-export default CardItem;
+
+const areEqual = (prevProps, nextProps) => {
+  return prevProps.selected === nextProps.selected
+    && prevProps.title === nextProps.title;
+}
+
+export default React.memo(CardItem, areEqual);

@@ -6,6 +6,7 @@ import CardItem from "../CardItem"
 
 function CardsList() {
   const [selectedCard, setSelectedCard] = useState(null);
+  const [test] = useState([1,2,3,4,5,6,7,8,9,10,11])
 
   const checkIsCardSelected = (card) => {
     if (selectedCard && card) {
@@ -41,6 +42,7 @@ function CardsList() {
           <CardItem
             title={selectedCard ? selectedCard.value : 'Select a card'}
             big
+            hiddenValue={!selectedCard}
             onSelect={() => false}
           />
         </Grid>
@@ -52,7 +54,19 @@ function CardsList() {
             <Button onClick={() => setSelectedCard(null)}>Reset Card</Button>
             <Button>Reveal Cards</Button>
           </ButtonGroup>
+          <Box ml={3}><Typography>Other users selected _num_ card(s)</Typography></Box>
         </Grid>
+      </Grid>
+      <Grid container spacing={8}>
+        {test.map(item => (
+        <Grid item xs={2} key={`${item}_id`}>
+            <CardItem
+              title={'Select a card'}
+              hiddenValue
+              onSelect={() => false}
+            />
+        </Grid>
+        ))}
       </Grid>
     </Box>
   )
